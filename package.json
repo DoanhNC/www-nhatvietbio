@@ -1,0 +1,32 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview --port 5173"
+    },
+    "devDependencies": {
+        "fast-glob": "^3.3.3",
+        "laravel-vite-plugin": "1.0.0",
+        "vite": "5.0.0"
+    },
+    "dependencies": {
+        "@ckeditor/ckeditor5-build-classic": "41.4.2",
+        "@fontsource/inter": "^5.2.8",
+        "@fontsource/roboto": "^5.2.8",
+        "@fortawesome/fontawesome-free": "^5.15.4",
+        "angular": "^1.8.3",
+        "angular-sanitize": "^1.8.3",
+        "angular-toastr": "^2.1.1",
+        "bootstrap": "^4.6.2",
+        "dotenv": "^17.2.3",
+        "feather-icons": "^4.29.2",
+        "headroom.js": "^0.12.0",
+        "jquery": "^3.7.1",
+        "popper.js": "^1.16.1-lts",
+        "select2": "^4.1.0-rc.0",
+        "swiper": "^12.0.2",
+        "toastr": "2.1.4"
+    }
+}

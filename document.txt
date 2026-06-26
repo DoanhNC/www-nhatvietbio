@@ -1,0 +1,87 @@
+# Tài liệu Dự án: VyVy Admin Panel & E-commerce
+
+## 1. Tổng quan dự án
+Dự án là một ứng dụng web thương mại điện tử (E-commerce) được xây dựng trên nền tảng **Laravel 11**. Hệ thống bao gồm hai phần chính:
+- **Web Interface**: Giao diện bán hàng dành cho người dùng cuối (Khách hàng).
+- **Admin Panel**: Giao diện quản trị dành cho quản trị viên.
+
+### Công nghệ sử dụng
+- **Backend Framework**: Laravel 11
+- **Database**: MySQL
+- **Authentication**:
+    - **Session**: Dùng cho giao diện Web và Admin (Server-side rendering).
+    - **Laravel Sanctum**: Dùng cho RESTful API (Giỏ hàng, App mobile nếu có).
+- **Frontend**: Blade Templates (Server-side rendering) kết hợp với JS (có thể là jQuery hoặc Vanilla JS cho các tác vụ AJAX).
+
+## 2. Cấu trúc thư mục & Routes
+Cấu trúc dự án tuân theo chuẩn Laravel 11, với một số điểm tùy biến:
+
+### Routes
+Thay vì sử dụng `routes/web.php` và `routes/api.php` mặc định, dự án sử dụng file tùy chỉnh:
+- **`routes/route.php`**: Chứa toàn bộ routes cho cả Web và Admin.
+    - `/web/*`: Các route cho khách hàng (Login, Register, Cart, Checkout, Account).
+    - `/admin/*`: Các route cho quản trị viên (Dashboard, Products, Orders, Users).
+    - `/rest/*`: Các API endpoint phục vụ cho AJAX/Mobile app.
+- **`routes/api.php`**: Chứa các route API riêng biệt cho Giỏ hàng (`/web/cart`).
+
+### Controllers
+- **`App\Http\Controllers\Web`**: Xử lý logic cho giao diện khách hàng (Login, Home, Product Detail).
+- **`App\Http\Controllers\Admin`**: Xử lý logic cho giao diện quản trị.
+- **`App\Http\Controllers\Rest`**: Xử lý các API trả về JSON.
+
+## 3. Cơ sở dữ liệu (Database Schema)
+Các bảng trong database đều có tiền tố `e_` để tránh xung đột.
+
+### Các thực thể chính
+1.  **Tài khoản (`e_accounts`)**:
+    - Lưu trữ thông tin cả User và Admin.
+    - Phân biệt bằng trường `is_admin` (0: User, 1: Admin).
+    - Trạng thái `status` (1: Active).
+2.  **Sản phẩm (`e_products`)**:
+    - Liên kết với `e_brands` (Thương hiệu), `e_product_types` (Danh mục), `e_units` (Đơn vị tính).
+    - **Biến thể (`e_product_attributes`)**: Lưu size, màu sắc, giá (`price_new`, `price_old`) và số lượng tồn kho.
+    - **Hình ảnh (`e_product_images`)**: Lưu danh sách ảnh sản phẩm.
+3.  **Đơn hàng (`e_orders`)**:
+    - Lưu thông tin đơn hàng: `order_number`, `status`, `total_amount`, `payment_method`.
+    - **Chi tiết đơn hàng (`e_order_items`)**: Lưu snapshot thông tin sản phẩm tại thời điểm mua (để giữ nguyên giá/tên dù sản phẩm gốc có thay đổi).
+4.  **Giỏ hàng (`e_carts` & `e_cart_items`)**:
+    - Lưu giỏ hàng tạm thời của user.
+    - Có thể liên kết với `account_id` hoặc `session_token` (cho khách vãng lai).
+
+## 4. Luồng nghiệp vụ chính (Business Logic)
+
+### 4.1. Xác thực (Authentication)
+Hệ thống sử dụng cơ chế "Hybrid Auth":
+- **Login**:
+    - User nhập email/password.
+    - Hệ thống kiểm tra trong bảng `e_accounts`.
+    - Nếu đúng:
+        1.  Đăng nhập vào Session (`Auth::guard('web')`).
+        2.  Tạo Token Sanctum (`$acc->createToken(...)`) trả về cho client để dùng cho các gọi API sau này.
+- **Middleware**:
+    - Web routes được bảo vệ bởi `auth` middleware.
+    - Admin routes được bảo vệ bởi `auth:admin` middleware.
+
+### 4.2. Quy trình Đặt hàng (Order Placement)
+Luồng xử lý nằm tại `App\Http\Controllers\Rest\OrdersController@store`:
+
+1.  **Validate**: Kiểm tra địa chỉ giao hàng (`shipping_address_id`) và phương thức thanh toán.
+2.  **Lấy giỏ hàng**: Tìm giỏ hàng của user hiện tại (`e_carts`).
+3.  **Tính toán**:
+    - Tính tổng tiền hàng (`subtotal`).
+    - Tính phí ship: **Miễn phí** nếu đơn > 500.000đ, ngược lại phí là 30.000đ.
+4.  **Tạo đơn hàng (`e_orders`)**:
+    - Mã đơn (`order_number`) được sinh tự động: `YYMMDD` + 6 số ngẫu nhiên.
+    - Trạng thái ban đầu: `pending`.
+5.  **Lưu chi tiết (`e_order_items`)**:
+    - Copy dữ liệu từ `e_cart_items` sang `e_order_items`.
+6.  **Dọn dẹp**: Xóa các item trong giỏ hàng sau khi đặt thành công.
+
+### 4.3. Quản lý Đơn hàng
+- User có thể xem danh sách đơn hàng, chi tiết đơn hàng và hủy đơn (nếu trạng thái là `pending` hoặc `processing`).
+- Admin có quyền quản lý toàn bộ đơn hàng, thay đổi trạng thái (Shipping, Delivered, Cancelled).
+
+## 5. Ghi chú kỹ thuật
+- **Mã đơn hàng**: Sử dụng vòng lặp `do-while` để đảm bảo mã sinh ra là duy nhất.
+- **Xử lý ảnh**: Ảnh sản phẩm được lưu đường dẫn trong DB, có cờ `is_primary` để đánh dấu ảnh đại diện.
+- **API Response**: Sử dụng class `App\Support\ApiResponse` để chuẩn hóa format trả về (success/error).

@@ -1,0 +1,10 @@
+composer install
+composer update
+npm install
+
+// tạo database
+php artisan migrate
+php artisan db:seed
+
+
+cccđfdfdfdfd

@@ -1,0 +1,26 @@
+/* Vendor CSS qua npm (KHÔNG import trong JS để khỏi trùng) */
+/* Inter với các weights bạn cần */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+
+/* Roboto với các weights bạn cần */
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+@import "@fontsource/roboto/700.css";
+
+/* thư viện css cần thiết */
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import '@fortawesome/fontawesome-free/css/all.css';
+@import "toastr/build/toastr.min.css";
+
+/* ====== Swiper v11+ CSS ====== */
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+@import "swiper/css/effect-fade";
+@import "swiper/css/effect-cube";
+@import "swiper/css/effect-flip";
+@import "swiper/css/effect-creative";
+@import "swiper/css/effect-cards";
