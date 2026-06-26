@@ -37,12 +37,12 @@ export default defineConfig({
         host: "0.0.0.0",
         port: 5173,
         // origin để Laravel Vite Plugin tạo URL đúng port 8173 trong HTML
-        origin: "http://localhost:8173",
+        origin: "http://localhost:5873",
         // HMR cho Docker: clientPort là port bên ngoài container
         hmr: {
             host: "localhost",
             port: 5173, // Port bên trong container
-            clientPort: 8173, // Port mà browser kết nối (đã map ra ngoài)
+            clientPort: 5873, // Port mà browser kết nối (đã map ra ngoài)
             protocol: "ws",
         },
         // Watch config cho Docker (file system polling)

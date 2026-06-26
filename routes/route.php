@@ -42,6 +42,12 @@ use App\Http\Controllers\Rest\{
     WebsiteSettingsController
 };
 
+Route::get('/clear-cache', function () {
+    \Artisan::call('view:clear');
+    \Artisan::call('route:clear');
+    return "Đã xóa view và route cache thành công!";
+});
+
 // --------------------------------------Route BMW Technology-------------------------------------------------------------------------------
 // Trang chủ - Web theme (Laravel Blade)
 Route::get('/', [HomeController::class, 'index'])->name('bmw.home');
@@ -56,6 +62,7 @@ Route::post('/contact', [HomeController::class, 'sendContact'])->name('bmw.conta
 
 // Public API - Translations for frontend (no auth required)
 Route::get('/api/translations', [LanguagesController::class, 'getTranslations'])->name('api.translations');
+Route::get('/api/category-posts', [HomeController::class, 'getCategoryPosts'])->name('api.category_posts');
 
 // Change language route
 Route::get('/change-language/{code}', function ($code) {

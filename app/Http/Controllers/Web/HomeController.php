@@ -82,7 +82,7 @@ class HomeController extends Controller
             ->where('status', 1)
             ->where(function ($query) use ($slugOrId) {
                 $query->where('slug', $slugOrId)
-                      ->orWhere('id', $slugOrId);
+                    ->orWhere('id', $slugOrId);
             })
             ->first();
 
@@ -383,13 +383,13 @@ class HomeController extends Controller
             $msg     = $request->input('message', 'Không có lời nhắn');
 
             $content = "=== LIÊN HỆ MỚI TỪ WEBSITE ===\n\n"
-                     . "Họ tên: {$name}\n"
-                     . "Số điện thoại: {$phone}\n"
-                     . "Email: {$email}\n"
-                     . "Lời nhắn:\n{$msg}\n\n"
-                     . "---\n"
-                     . "Gửi từ: {$siteName}\n"
-                     . "Thời gian: " . now()->format('d/m/Y H:i:s');
+                . "Họ tên: {$name}\n"
+                . "Số điện thoại: {$phone}\n"
+                . "Email: {$email}\n"
+                . "Lời nhắn:\n{$msg}\n\n"
+                . "---\n"
+                . "Gửi từ: {$siteName}\n"
+                . "Thời gian: " . now()->format('d/m/Y H:i:s');
 
             Mail::raw($content, function ($message) use ($toEmail, $name, $email, $siteName) {
                 $message->to($toEmail)
@@ -408,7 +408,6 @@ class HomeController extends Controller
             ]);
 
             return redirect()->back()->with('contact_success', 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.');
-
         } catch (\Exception $e) {
             Log::error('Contact form failed: ' . $e->getMessage());
 
@@ -416,5 +415,73 @@ class HomeController extends Controller
                 ->withInput()
                 ->with('contact_error', 'Gửi liên hệ thất bại. Vui lòng thử lại sau hoặc gọi trực tiếp hotline.');
         }
+    }
+
+    /**
+     * Lấy danh sách bài viết cùng danh mục phân trang (trả về JSON cho AngularJS)
+     */
+    public function getCategoryPosts(Request $request)
+    {
+        $categoryId = $request->input('category_id');
+        $excludeId = $request->input('exclude_id');
+        $page = $request->input('page', 1);
+        $perPage = 6;
+
+        $category = EPostCategory::find($categoryId);
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found'
+            ], 404);
+        }
+
+        // Lấy tất cả danh mục con của danh mục chính
+        if ($category->parent_id) {
+            $mainParentCategory = EPostCategory::find($category->parent_id);
+        } else {
+            $mainParentCategory = $category;
+        }
+
+        if ($mainParentCategory) {
+            $childCategories = EPostCategory::where('parent_id', $mainParentCategory->id)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->toArray();
+            $allCategoryIds = array_merge([$mainParentCategory->id], $childCategories);
+        } else {
+            $allCategoryIds = [$category->id];
+        }
+
+        $postsQuery = EPost::where('status', 1)
+            ->whereIn('main_category_id', $allCategoryIds);
+
+        if ($excludeId) {
+            $postsQuery->where('id', '!=', $excludeId);
+        }
+
+        $paginator = $postsQuery->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $currentLang = session('locale', 'vi');
+
+        $items = collect($paginator->items())->map(function ($post) use ($currentLang) {
+            return [
+                'id' => $post->id,
+                'title' => $post->getTitle($currentLang),
+                'slug' => $post->slug,
+                'main_image' => $post->main_image,
+                'url' => route('bmw.news.detail', $post->slug),
+                'created_at' => $post->created_at->format('d/m/Y'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $items,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ]
+        ]);
     }
 }

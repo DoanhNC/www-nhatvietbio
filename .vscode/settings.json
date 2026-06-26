@@ -1,0 +1,29 @@
+{
+  "editor.formatOnSave": true,
+  // Format cho JS/AngularJS
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Format cho PHP
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  // Format cho HTML
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Format cho CSS
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Format cho Blade HTML
+  "[blade.php]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Tuỳ chỉnh Prettier
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "prettier.tabWidth": 2,
+  "prettier.printWidth": 100
+}

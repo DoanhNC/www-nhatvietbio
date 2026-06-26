@@ -1147,6 +1147,66 @@
             justify-content: center;
         }
     }
+
+    /* ========== Sidebar Pagination ========== */
+    .sidebar-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin-top: 18px;
+        padding-top: 15px;
+        border-top: 1px dashed #eee;
+    }
+
+    .sidebar-page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #4a5568;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+
+    .sidebar-page-btn:hover:not(.disabled):not(.active) {
+        border-color: var(--color-green);
+        color: var(--color-green);
+        background: #f8fafc;
+        transform: translateY(-1px);
+    }
+
+    .sidebar-page-btn.active {
+        background: var(--color-green);
+        border-color: var(--color-green);
+        color: #fff;
+        cursor: default;
+        box-shadow: 0 2px 6px rgba(46, 183, 46, 0.3);
+    }
+
+    .sidebar-page-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    /* ng-cloak to prevent blinking */
+    [ng\:cloak],
+    [ng-cloak],
+    [data-ng-cloak],
+    [x-ng-cloak],
+    .ng-cloak,
+    .x-ng-cloak {
+        display: none !important;
+    }
 </style>
 @endpush
 
@@ -1419,38 +1479,33 @@
             <!-- Sidebar Column -->
             <aside class="post-detail-sidebar">
                 <!-- Bài Viết Cùng Danh Mục (từ danh mục cha và danh mục con) -->
-                <div class="sidebar-card">
+                <div class="sidebar-card" id="sameCategoryPostsCard" ng-controller="SameCategoryPostsCtrl" ng-cloak>
                     <div class="sidebar-card-header">
                         <h3>{{ __t('news.same_category_posts', 'Bài Viết Cùng Danh Mục') }}</h3>
                     </div>
-                    @if($latestPosts->count() > 0)
-                    <ul class="sidebar-posts-list">
-                        @foreach($latestPosts->take(6) as $latest)
-                        <li>
-                            <a href="{{ route('bmw.news.detail', $latest->slug) }}" class="sidebar-post-item">
+
+                    <ul class="sidebar-posts-list" ng-if="posts.length > 0">
+                        <li ng-repeat="p in posts">
+                            <a ng-href="@{{ p.url }}" class="sidebar-post-item">
                                 <div class="sidebar-post-thumb">
-                                    @if($latest->main_image)
-                                    <img src="{{ $latest->main_image }}" alt="{{ $latest->getTitle($currentLang) }}">
-                                    @else
-                                    <div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f5f5f5;">
+                                    <img ng-if="p.main_image" ng-src="@{{ p.main_image }}" alt="@{{ p.title }}">
+                                    <div ng-if="!p.main_image" style="display:flex;align-items:center;justify-content:center;height:100%;background:#f5f5f5;">
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
                                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                                             <circle cx="8.5" cy="8.5" r="1.5" />
                                             <polyline points="21 15 16 10 5 21" />
                                         </svg>
                                     </div>
-                                    @endif
                                 </div>
                                 <div class="sidebar-post-content">
-                                    <h4 class="sidebar-post-title">{{ $latest->getTitle($currentLang) }}</h4>
+                                    <h4 class="sidebar-post-title">@{{ p.title }}</h4>
                                 </div>
                             </a>
                         </li>
-                        @endforeach
                     </ul>
-                    @else
+
                     <!-- Empty State UI -->
-                    <div class="sidebar-empty-state">
+                    <div class="sidebar-empty-state" ng-if="posts.length === 0 && !loading">
                         <div class="sidebar-empty-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -1464,7 +1519,27 @@
                             {{ __t('news.explore_more', 'Khám phá thêm') }}
                         </a>
                     </div>
-                    @endif
+
+                    <!-- Loader Spinner -->
+                    <div class="text-center py-3" ng-if="loading">
+                        <div class="spinner-border text-success" role="status" style="width: 1.5rem; height: 1.5rem;">
+                            <span class="sr-only">Đang tải...</span>
+                        </div>
+                    </div>
+
+                    <!-- Phân trang (Luôn hiển thị nút tiến/lùi, disable khi không dùng được) -->
+                    <div class="sidebar-pagination" ng-if="meta && meta.last_page >= 1">
+                        <button class="sidebar-page-btn" ng-class="{disabled: meta.current_page <= 1}" ng-click="goto(meta.current_page - 1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="sidebar-page-btn" ng-repeat="p in pages track by $index"
+                            ng-class="{active: p == meta.current_page, disabled: p === '...'}" ng-click="goto(p)">
+                            @{{ p }}
+                        </button>
+                        <button class="sidebar-page-btn" ng-class="{disabled: meta.current_page >= meta.last_page}" ng-click="goto(meta.current_page + 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Bài Viết Liên Quan (từ danh mục liên quan) -->
@@ -1514,18 +1589,18 @@
             <!-- Map Column -->
             <div class="contact-map">
                 @php
-                    $contactInfo = \App\Models\ESetting::getWebsiteInfo();
-                    $contactMapEmbed = $contactInfo['map_embed'] ?? '';
+                $contactInfo = \App\Models\ESetting::getWebsiteInfo();
+                $contactMapEmbed = $contactInfo['map_embed'] ?? '';
                 @endphp
                 @if($contactMapEmbed)
-                    <iframe src="{{ $contactMapEmbed }}" width="100%" height="100%" style="border: 0; border-radius: 4px;" allowfullscreen="" loading="lazy"></iframe>
+                <iframe src="{{ $contactMapEmbed }}" width="100%" height="100%" style="border: 0; border-radius: 4px;" allowfullscreen="" loading="lazy"></iframe>
                 @else
-                    <div style="width: 100%; height: 100%; min-height: 300px; background: #f5f5f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #999;">
-                        <div class="text-center">
-                            <i class="fas fa-map-marker-alt" style="font-size: 48px; margin-bottom: 16px;"></i>
-                            <p style="margin: 0;">Chưa cấu hình Google Maps</p>
-                        </div>
+                <div style="width: 100%; height: 100%; min-height: 300px; background: #f5f5f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #999;">
+                    <div class="text-center">
+                        <i class="fas fa-map-marker-alt" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <p style="margin: 0;">Chưa cấu hình Google Maps</p>
                     </div>
+                </div>
                 @endif
             </div>
 
@@ -1578,7 +1653,16 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
+<script>
+    // Cấu hình tham số cho AngularJS controller
+    window.sidebarConfig = {
+        categoryId: {{ $post->main_category_id ?? 0 }},
+        excludeId: {{ $post->id ?? 0 }}
+    };
+</script>
+@vite('resources/js/web/common/webApp.js')
+@vite('resources/js/web/pages/sameCategoryPostsCtrl.js')
 <script src="{{ asset('bmw/js/news.js') }}"></script>
 <script>
     // Smooth scroll for TOC links
@@ -1638,4 +1722,4 @@
         });
     });
 </script>
-@endsection
+@endpush

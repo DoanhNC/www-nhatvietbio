@@ -53,19 +53,19 @@ $currentLang = $currentLang ?? session('locale', 'vi');
     {{-- Theme Colors --}}
     @php
     $css = \App\Models\ESetting::getThemeColorsCss();
-    if ($css) {
-    echo '<style id="theme-colors">
-        :root {
-            ' . $css . '
-        }
-    </style>';
-    }
     @endphp
+    <style id="theme-colors">
+        :root {
+            {!! $css !!}
+            --color-green: var(--color-secondary, #2eb72e);
+            --color-green-dark: var(--color-secondary-dark, #259625);
+        }
+    </style>
 
     @stack('styles')
 </head>
 
-<body>
+<body ng-app="webApp" ng-cloak>
     <!-- ========== TOP BAR ========== -->
     <div class="topbar">
         <div class="container topbar-content">
@@ -310,6 +310,7 @@ $currentLang = $currentLang ?? session('locale', 'vi');
 
     <!-- Vendor JS (Swiper, etc.) -->
     @vite('resources/js/web/common/vendor.js')
+    @vite('resources/js/web/common/webApp.js')
 
     @stack('scripts')
 
